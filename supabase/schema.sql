@@ -129,9 +129,6 @@ declare
 begin
   new.updated_at := now();
 
-  -- Quantity tracking: hitting 0 sells the item out automatically,
-  -- and topping up from 0 brings it back automatically. (Only when the
-  -- quantity itself changes, so the owner can still flip the switch.)
   if not restoring and new.track_qty and new.stock_qty is not null then
     if new.stock_qty = 0
        and (tg_op = 'INSERT' or old.stock_qty is distinct from new.stock_qty or old.track_qty is distinct from new.track_qty) then
@@ -145,9 +142,6 @@ begin
     end if;
   end if;
 
-  -- Stamp restock / stock-out times, except while restore_stock() is
-  -- undoing a tap (then the previous timestamps are put back as-is, so
-  -- an accidental "Sold out" + Undo does not show up as "Fresh right now").
   if tg_op = 'UPDATE' and not restoring then
     if old.in_stock = false and new.in_stock = true then
       new.last_restocked_at := now();
@@ -309,7 +303,7 @@ as $$
   )
   select c.item_id, c.views
   from counts c
-  where (select coalesce(sum(views), 0) from counts) >= 20   -- "enough data"
+  where (select coalesce(sum(views), 0) from counts) >= 20
     and c.views >= 3
   order by c.views desc
   limit greatest(1, least(lim, 12));
@@ -440,10 +434,9 @@ begin
   if auth.uid() is null then
     return false;
   end if;
-  lock table public.admins in exclusive mode; -- so two people cannot both claim
+  lock table public.admins in exclusive mode;
   if not exists (select 1 from public.admins) then
     insert into public.admins (user_id) values (auth.uid());
-    -- Make sure the shop row exists so Settings can be saved right away.
     insert into public.shop_settings (id) values (1) on conflict (id) do nothing;
     return true;
   end if;
