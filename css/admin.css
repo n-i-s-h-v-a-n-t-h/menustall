@@ -610,6 +610,8 @@
 .login-theme { position: fixed; top: calc(12px + env(safe-area-inset-top)); right: 12px; }
 .login-wrap { display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; justify-items: center; gap: var(--sp-4); padding: var(--sp-8) var(--gutter); }
 .login-banner span { min-width: 0; overflow-wrap: anywhere; }
+.login-banner { flex-wrap: wrap; }
+.login-detail { flex-basis: 100%; padding-left: 26px; font-weight: 500; opacity: 0.85; overflow-wrap: anywhere; }
 .login-card { width: min(420px, 100%); padding: var(--sp-6) var(--sp-5); }
 .login-brand { display: grid; justify-items: center; gap: 4px; margin-bottom: var(--sp-5); text-align: center; }
 .login-brand h1 { font-size: var(--fs-28); color: var(--brand); }

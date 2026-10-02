@@ -114,7 +114,11 @@ export function initLoginPage() {
   if (isRecovery) show('recover');
   sb.rpc('setup_status').then(({ data, error }) => {
     if (error) {
-      if (/Could not find the function|does not exist|schema cache/i.test(error.message)) showBanner('error', REASONS.setup.text);
+      if (/Could not find the function|does not exist|schema cache/i.test(error.message)) {
+        showBanner('error', REASONS.setup.text);
+        // Show the database's own words too, so problems are easy to report.
+        banner.appendChild(h('small', { class: 'login-detail' }, `Details: ${error.message}`));
+      }
       return;
     }
     const firstRun = !data.has_owner;
