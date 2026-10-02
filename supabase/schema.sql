@@ -147,7 +147,7 @@ begin
 
   -- Stamp restock / stock-out times, except while restore_stock() is
   -- undoing a tap (then the previous timestamps are put back as-is, so
-  -- an accidental "Sold out" + Undo doesn't show up as "Fresh right now").
+  -- an accidental "Sold out" + Undo does not show up as "Fresh right now").
   if tg_op = 'UPDATE' and not restoring then
     if old.in_stock = false and new.in_stock = true then
       new.last_restocked_at := now();
@@ -317,7 +317,7 @@ $$;
 
 grant execute on function public.popular_items(int, int) to anon, authenticated;
 
--- Owner dashboard numbers in one round trip, computed in the shop's time zone.
+-- Owner dashboard numbers in one round trip, computed in the shop time zone.
 create or replace function public.admin_stats(tz text default 'Asia/Kolkata')
 returns json
 language plpgsql
@@ -377,7 +377,7 @@ $$;
 revoke execute on function public.admin_stats(text) from public, anon;
 grant execute on function public.admin_stats(text) to authenticated;
 
--- Undo for the Stock screen: put an item's stock state back exactly as it
+-- Undo for the Stock screen: put the stock state of an item back exactly as it
 -- was, including its timestamps.
 create or replace function public.restore_stock(
   p_item uuid,
@@ -440,7 +440,7 @@ begin
   if auth.uid() is null then
     return false;
   end if;
-  lock table public.admins in exclusive mode; -- two people can't both claim
+  lock table public.admins in exclusive mode; -- so two people cannot both claim
   if not exists (select 1 from public.admins) then
     insert into public.admins (user_id) values (auth.uid());
     -- Make sure the shop row exists so Settings can be saved right away.
@@ -536,7 +536,7 @@ $$;
 -- ---------------------------------------------------------------------
 -- 9. Storage: public bucket for menu photos and the shop logo
 --    Wrapped so that, if your project restricts storage changes from the
---    SQL editor, the rest of the setup still succeeds (you'll see a NOTICE
+--    SQL editor, the rest of the setup still succeeds (you will see a NOTICE
 --    and can create the bucket by hand: README → "Images not uploading").
 -- ---------------------------------------------------------------------
 
@@ -560,15 +560,15 @@ begin
   execute 'drop policy if exists "menu-images admin insert" on storage.objects';
   execute 'drop policy if exists "menu-images admin update" on storage.objects';
   execute 'drop policy if exists "menu-images admin delete" on storage.objects';
-  execute $p$create policy "menu-images public read" on storage.objects for select
-    using (bucket_id = 'menu-images')$p$;
-  execute $p$create policy "menu-images admin insert" on storage.objects for insert to authenticated
-    with check (bucket_id = 'menu-images' and public.is_admin())$p$;
-  execute $p$create policy "menu-images admin update" on storage.objects for update to authenticated
-    using (bucket_id = 'menu-images' and public.is_admin())
-    with check (bucket_id = 'menu-images' and public.is_admin())$p$;
-  execute $p$create policy "menu-images admin delete" on storage.objects for delete to authenticated
-    using (bucket_id = 'menu-images' and public.is_admin())$p$;
+  execute 'create policy "menu-images public read" on storage.objects for select '
+       || 'using (bucket_id = ''menu-images'')';
+  execute 'create policy "menu-images admin insert" on storage.objects for insert to authenticated '
+       || 'with check (bucket_id = ''menu-images'' and public.is_admin())';
+  execute 'create policy "menu-images admin update" on storage.objects for update to authenticated '
+       || 'using (bucket_id = ''menu-images'' and public.is_admin()) '
+       || 'with check (bucket_id = ''menu-images'' and public.is_admin())';
+  execute 'create policy "menu-images admin delete" on storage.objects for delete to authenticated '
+       || 'using (bucket_id = ''menu-images'' and public.is_admin())';
 exception when others then
   raise notice 'ChaiMenu: could not create storage policies (%). See README → "Images not uploading".', sqlerrm;
 end;
@@ -576,7 +576,7 @@ $$;
 
 -- ---------------------------------------------------------------------
 -- 10. Owner account
---     You don't need to run anything here: the FIRST account that logs in
+--     You do not need to run anything here: the FIRST account that logs in
 --     to /admin becomes the owner automatically (claim_ownership below).
 --     To add another owner later, run (with their User UID):
 --
