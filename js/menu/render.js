@@ -363,19 +363,21 @@ export function applyFilters(state, handlers) {
 
   const empty = $('#menu-empty');
   const filtering = q || state.filters.veg || state.filters.available || state.filters.best;
-  if (visibleTotal === 0 && state.categories.length) {
+  if (visibleTotal === 0) {
     const suggestion = suggestWord(state);
     empty.hidden = false;
     clear(empty).appendChild(emptyState({
       emoji: q ? '🔍' : '🫖',
       title: q ? `No matches for “${state.query.trim()}”` : filtering ? 'Nothing matches these filters' : 'Menu coming soon',
-      message: q ? `Try “${suggestion}”, or check the spelling.` : filtering ? 'Try removing a filter to see more.' : 'The owner is still setting things up.',
+      message: q ? `Try “${suggestion}”, or check the spelling.` : filtering ? 'Try removing a filter to see more.'
+        : state.settings ? 'The owner is still setting things up.'
+        : 'The owner is still setting things up. (Owner: the database has no shop details yet — run supabase/schema.sql in Supabase, see README step 2.)',
       action: filtering ? h('button', { type: 'button', class: 'btn btn-secondary', onClick: handlers.onClearFilters }, icon('x', { size: 16 }), 'Clear search & filters') : null,
     }));
   } else {
     empty.hidden = true;
   }
-  $('#sections').hidden = visibleTotal === 0 && !!state.categories.length;
+  $('#sections').hidden = visibleTotal === 0;
 }
 
 function suggestWord(state) {
