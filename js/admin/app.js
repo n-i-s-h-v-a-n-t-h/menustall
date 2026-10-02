@@ -36,7 +36,8 @@ function tabFromHash() {
   if (TABS[t]) return t;
   let saved = null;
   try { saved = localStorage.getItem(TAB_KEY); } catch { /* ignore */ }
-  return TABS[saved] ? saved : 'stock'; // Stock is the counter's daily driver
+  // First visit opens Overview (setup checklist); after that, the last tab used.
+  return TABS[saved] ? saved : 'overview';
 }
 
 function show(tab, { focus = false } = {}) {
@@ -85,6 +86,7 @@ function buildTopbar() {
   $('#open-switch-slot').appendChild(openSwitch);
   $('#theme-slot').appendChild(themeToggle());
   $('#logout').addEventListener('click', logout);
+  $('#view-menu').addEventListener('click', () => { try { localStorage.setItem('chaimenu:viewed-menu', '1'); } catch { /* ignore */ } });
 }
 
 function setLive(status) {

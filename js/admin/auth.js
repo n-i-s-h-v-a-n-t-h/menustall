@@ -26,7 +26,10 @@ export async function requireAdmin() {
     return new Promise(() => {});
   }
 
-  const { data: isAdmin, error } = await sb.rpc('is_admin');
+  // claim_ownership() returns true for an existing owner, and makes the
+  // very first account the owner — no SQL needed during setup.
+  let { data: isAdmin, error } = await sb.rpc('claim_ownership');
+  if (error && /Could not find the function/i.test(error.message)) ({ data: isAdmin, error } = await sb.rpc('is_admin'));
   if (error && navigator.onLine) {
     if (/JWT|token/i.test(error.message)) {
       await sb.auth.signOut().catch(() => {});
@@ -41,12 +44,16 @@ export async function requireAdmin() {
   }
 
   sb.auth.onAuthStateChange((event) => {
-    if (event === 'SIGNED_OUT') location.replace(`${LOGIN}?reason=signedout`);
+    // Signed out on another tab/device (or the session expired).
+    if (event === 'SIGNED_OUT' && !loggingOut) location.replace(`${LOGIN}?reason=signedout`);
   });
   return session.user;
 }
 
+let loggingOut = false;
+
 export async function logout() {
+  loggingOut = true;
   await sb.auth.signOut().catch(() => {});
   location.replace(`${LOGIN}?reason=signedout`);
 }
@@ -57,7 +64,8 @@ export async function logout() {
 
 const REASONS = {
   signin: { type: 'info', text: 'Please log in to open the dashboard.' },
-  notadmin: { type: 'error', text: 'This account isn’t set up as the shop owner. Add its user ID to the “admins” table (see README → step 3).' },
+  notadmin: { type: 'error', text: 'This account isn’t the shop owner. Log in with the owner’s email, or ask the owner to add you (README → “Owner account”).' },
+  setup: { type: 'error', text: 'The database isn’t set up yet. In Supabase, open SQL Editor, paste all of supabase/schema.sql and click Run (README step 2). Then reload this page.' },
   signedout: { type: 'info', text: 'You’ve been logged out. See you soon!' },
   expired: { type: 'info', text: 'Your session expired. Please log in again.' },
   reset: { type: 'success', text: 'Password updated. Please log in with your new password.' },
@@ -68,7 +76,7 @@ export function initLoginPage() {
   const params = new URLSearchParams(location.search);
   const next = params.get('next') || '';
   const banner = $('#login-banner');
-  const forms = { login: $('#login-form'), forgot: $('#forgot-form'), recover: $('#recover-form') };
+  const forms = { login: $('#login-form'), signup: $('#signup-form'), forgot: $('#forgot-form'), recover: $('#recover-form') };
 
   const showBanner = (type, text) => {
     banner.hidden = !text;
@@ -94,13 +102,34 @@ export function initLoginPage() {
   const reason = REASONS[params.get('reason')];
   if (reason) showBanner(reason.type, reason.text);
 
-  // Already signed in as the owner? Skip straight to the dashboard.
+  // Owner check that also makes the very first account the owner.
+  const becomeOwner = async () => {
+    let res = await sb.rpc('claim_ownership');
+    if (res.error && /Could not find the function/i.test(res.error.message)) res = await sb.rpc('is_admin');
+    return res;
+  };
+
+  // First run? If the shop has no owner yet, open "Create owner account".
   const isRecovery = /type=recovery/.test(location.hash);
   if (isRecovery) show('recover');
-  else {
+  sb.rpc('setup_status').then(({ data, error }) => {
+    if (error) {
+      if (/Could not find the function|does not exist|schema cache/i.test(error.message)) showBanner('error', REASONS.setup.text);
+      return;
+    }
+    const firstRun = !data.has_owner;
+    $('#signup-link').hidden = !firstRun;
+    if (firstRun && !isRecovery) {
+      showBanner('info', 'Welcome! No owner account exists yet. Create yours below — it becomes the shop owner automatically.');
+      show('signup');
+    }
+  });
+
+  // Already signed in as the owner? Skip straight to the dashboard.
+  if (!isRecovery) {
     sb.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session || params.get('reason') === 'notadmin') return;
-      const { data: isAdmin } = await sb.rpc('is_admin');
+      if (!session || params.get('reason') === 'notadmin' || params.get('reason') === 'signedout') return;
+      const { data: isAdmin } = await becomeOwner();
       if (isAdmin) location.replace(destination());
     });
   }
@@ -156,11 +185,60 @@ export function initLoginPage() {
       password.focus();
       return;
     }
-    const { data: isAdmin, error: adminErr } = await sb.rpc('is_admin');
+    const { data: isAdmin, error: adminErr } = await becomeOwner();
     if (adminErr || !isAdmin) {
       setBusy(btn, false);
       await sb.auth.signOut().catch(() => {});
       showBanner('error', adminErr ? friendlyError(adminErr, 'check your account') : REASONS.notadmin.text);
+      return;
+    }
+    location.replace(destination());
+  });
+
+  /* --- Create the owner account (first run) --- */
+  $('#signup-link').addEventListener('click', () => { $('#su-email').value = $('#email').value; show('signup'); });
+  $('#signup-to-login').addEventListener('click', () => show('login'));
+
+  forms.signup.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('#su-email');
+    const pw = $('#su-password');
+    const pw2 = $('#su-password-2');
+    for (const el of [email, pw, pw2]) fieldError(el, '');
+    if (!/^\S+@\S+\.\S+$/.test(email.value.trim())) { fieldError(email, 'Enter a valid email address.'); email.focus(); return; }
+    if (pw.value.length < 8) { fieldError(pw, 'Use at least 8 characters.'); pw.focus(); return; }
+    if (pw.value !== pw2.value) { fieldError(pw2, 'Passwords don’t match.'); pw2.focus(); return; }
+
+    const btn = forms.signup.querySelector('button[type="submit"]');
+    setBusy(btn, true, 'Creating…');
+    const { data, error } = await sb.auth.signUp({
+      email: email.value.trim(),
+      password: pw.value,
+      options: { emailRedirectTo: new URL(LOGIN, location.href).href.split('?')[0] },
+    });
+    if (error) {
+      setBusy(btn, false);
+      if (/already registered|already exists/i.test(error.message)) {
+        $('#email').value = email.value.trim();
+        show('login');
+        showBanner('info', 'That email already has an account — log in with it below.');
+      } else {
+        showBanner('error', friendlyError(error, 'create the account'));
+      }
+      return;
+    }
+    if (!data.session) {
+      // Supabase "Confirm email" is on: the owner must click the email link first.
+      setBusy(btn, false);
+      $('#email').value = email.value.trim();
+      show('login');
+      showBanner('success', `Almost done! We emailed a confirmation link to ${email.value.trim()}. Click it — even if the page it opens doesn’t load, your email is confirmed — then come back here and log in. (No email? See README → “Confirmation email”.)`);
+      return;
+    }
+    const { data: isAdmin, error: ownErr } = await becomeOwner();
+    if (ownErr || !isAdmin) {
+      setBusy(btn, false);
+      showBanner('error', ownErr ? friendlyError(ownErr, 'set up the owner account') : REASONS.notadmin.text);
       return;
     }
     location.replace(destination());

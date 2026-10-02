@@ -602,12 +602,14 @@
 
 .login-page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100dvh;
   background: var(--grad-hero);
   background-attachment: fixed;
 }
 .login-theme { position: fixed; top: calc(12px + env(safe-area-inset-top)); right: 12px; }
-.login-wrap { display: grid; align-content: center; justify-items: center; gap: var(--sp-4); padding: var(--sp-8) var(--gutter); }
+.login-wrap { display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; justify-items: center; gap: var(--sp-4); padding: var(--sp-8) var(--gutter); }
+.login-banner span { min-width: 0; overflow-wrap: anywhere; }
 .login-card { width: min(420px, 100%); padding: var(--sp-6) var(--sp-5); }
 .login-brand { display: grid; justify-items: center; gap: 4px; margin-bottom: var(--sp-5); text-align: center; }
 .login-brand h1 { font-size: var(--fs-28); color: var(--brand); }
@@ -644,3 +646,22 @@
 .pw-input { padding-right: 52px; }
 .input-wrap > .input-addon { position: absolute; right: 2px; }
 .login-foot a { color: var(--muted); }
+
+/* ---------------- Setup checklist ---------------- */
+
+.setup { margin-bottom: var(--sp-4); box-shadow: var(--shadow-2), inset 0 0 0 2px var(--accent-soft); }
+.setup-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.setup-head .card-title { margin-bottom: 0; }
+.setup-steps { display: grid; gap: 2px; margin-top: var(--sp-3); }
+.setup-step { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: var(--sp-3); min-height: 52px; }
+.setup-step + .setup-step { box-shadow: inset 0 1px 0 var(--hairline); }
+.setup-num {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--brand-soft); color: var(--brand); font-weight: 800; font-size: var(--fs-14);
+}
+.setup-step.is-done .setup-num { background: var(--success); color: #fff; }
+.setup-step.is-done .setup-text { color: var(--muted); text-decoration: line-through; }
+.setup-text { font-weight: 600; font-size: var(--fs-14); }
+.setup-step.is-done .btn { display: none; }
+@media (max-width: 400px) { .setup-step { grid-template-columns: 28px 1fr; } .setup-step .btn { grid-column: 2; justify-self: start; } }
+.login-card .btn { white-space: normal; text-align: center; line-height: 1.3; padding-block: 10px; }

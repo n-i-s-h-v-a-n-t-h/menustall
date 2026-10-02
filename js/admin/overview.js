@@ -2,7 +2,7 @@
 // viewed items, scans by hour (inline SVG, no chart library) and the
 // quick actions the owner needs at opening and closing time.
 
-import { store, subscribe, getItem, emojiFor, setStockBulk, updateSettings } from './store.js';
+import { store, subscribe, getItem, emojiFor, setStockBulk, updateSettings, menuUrlFor } from './store.js';
 import { sb, run } from '../lib/supabase.js';
 import { h, icon, clear, toast, confirmDialog, button, setBusy, skeleton } from '../lib/ui.js';
 import { formatTimeOfDay, timeAgo, plural, formatMinutes } from '../lib/format.js';
@@ -34,6 +34,8 @@ export function mount(panel) {
   const startDay = button('Start the day', { icon: 'sunrise', variant: 'accent', size: 'lg' });
   const openClose = button('Close shop', { icon: 'power', variant: 'secondary', size: 'lg' });
 
+  const checklist = h('section', { class: 'card pad setup', 'aria-labelledby': 'setup-title', hidden: true });
+
   panel.append(
     h('div', { class: 'panel-head' },
       h('div', {},
@@ -41,6 +43,7 @@ export function mount(panel) {
         dateLine,
       ),
     ),
+    checklist,
     kpis,
     h('div', { class: 'card pad quick' },
       h('h3', { class: 'card-title' }, icon('megaphone', { size: 18 }), 'Quick actions'),
@@ -71,6 +74,43 @@ export function mount(panel) {
   annClear.addEventListener('click', () => { annIn.value = ''; saveAnnouncement(); });
   startDay.addEventListener('click', startTheDay);
   openClose.addEventListener('click', toggleOpen);
+
+
+  /* ---------------- Setup checklist (first days) ---------------- */
+
+  const SETUP_HIDE = 'chaimenu:setup-hidden';
+  const VIEWED = 'chaimenu:viewed-menu';
+  const flag = (k) => { try { return localStorage.getItem(k) === '1'; } catch { return false; } };
+
+  function renderChecklist() {
+    const s = store.settings || {};
+    const steps = [
+      { done: !!s.shop_name && s.shop_name !== 'My Tea Stall', title: 'Add your shop name, hours & logo', href: '#settings', cta: 'Open Settings' },
+      { done: store.categories.length > 0 && store.items.length > 0, title: 'Add your menu items & prices', href: '#menu', cta: 'Open Menu' },
+      { done: store.tables.some((t) => t.is_active), title: 'Enter your tables & print QR cards', href: '#tables', cta: 'Open Tables & QR' },
+      { done: flag(VIEWED), title: 'See your menu like a customer', href: menuUrlFor(1), cta: 'View menu', external: true },
+    ];
+    const left = steps.filter((x) => !x.done).length;
+    checklist.hidden = left === 0 || flag(SETUP_HIDE);
+    if (checklist.hidden) return;
+    clear(checklist).append(
+      h('div', { class: 'setup-head' },
+        h('h3', { class: 'card-title', id: 'setup-title' }, icon('sparkles', { size: 18 }), `Get your shop ready · ${steps.length - left}/${steps.length} done`),
+        h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onClick: () => { try { localStorage.setItem(SETUP_HIDE, '1'); } catch { /* ignore */ } renderChecklist(); } }, 'Hide'),
+      ),
+      h('ol', { class: 'setup-steps' }, steps.map((step, i) => h('li', { class: `setup-step ${step.done ? 'is-done' : ''}` },
+        h('span', { class: 'setup-num', 'aria-hidden': 'true' }, step.done ? icon('check', { size: 16 }) : String(i + 1)),
+        h('span', { class: 'setup-text' }, step.title, step.done ? h('span', { class: 'sr-only' }, ' (done)') : null),
+        h('a', {
+          class: `btn btn-sm ${step.done ? 'btn-ghost' : 'btn-primary'}`,
+          href: step.href,
+          target: step.external ? '_blank' : null,
+          rel: step.external ? 'noopener' : null,
+          onClick: step.external ? () => { try { localStorage.setItem(VIEWED, '1'); } catch { /* ignore */ } setTimeout(renderChecklist, 300); } : null,
+        }, step.cta, step.external ? icon('external', { size: 14 }) : null),
+      ))),
+    );
+  }
 
   /* ---------------- KPIs ---------------- */
 
@@ -264,9 +304,11 @@ export function mount(panel) {
       renderFeed();
     }
     if (['item', 'items', 'item_removed', 'loaded'].includes(e.type)) renderKpis();
+    if (['item', 'items', 'item_removed', 'loaded', 'categories', 'settings', 'tables'].includes(e.type)) renderChecklist();
     if (e.type === 'settings' || e.type === 'loaded') paintQuick();
   });
 
+  renderChecklist();
   renderKpis();
   renderChart();
   renderTop();
@@ -275,6 +317,7 @@ export function mount(panel) {
 
   return {
     show() {
+      renderChecklist();
       loadStats();
       loadFeed();
       clearInterval(timer);

@@ -34,15 +34,10 @@ Customers scan the QR code on their table and see your live menu: prices, photos
 
 This one step creates all the tables, security rules, live updates, the photo storage bucket, and a sample menu with about 20 South Indian tea stall items. It's safe to run again later.
 
-### 3. Create your owner login
-1. In the left sidebar, go to **Authentication → Users → Add user → Create new user**.
-2. Enter your email and a password, tick **Auto Confirm User**, then click **Create user**.
-3. Click the new user in the list and copy its **User UID** (it looks like `3f1c…-…-…`).
-4. Go back to **SQL Editor → New query**, paste the line below with your UID in place of the zeros, and click **Run**:
-   ```sql
-   insert into public.admins (user_id) values ('00000000-0000-0000-0000-000000000000');
-   ```
-   This line is what makes the account the shop owner. Without it, the login is refused.
+### 3. Owner account — nothing to do here
+The **first account created on the dashboard becomes the shop owner automatically.** You'll do this in step 6. You don't need to copy any IDs or run any SQL.
+
+Tip: to skip the confirmation email, go to **Authentication → Sign In / Providers → Email** in Supabase and turn **Confirm email** off. (If you leave it on, see *Confirmation email* under Troubleshooting.)
 
 ### 4. Connect the app to your database
 1. In Supabase, go to **Project Settings (gear icon) → API** (in newer dashboards: **Project Settings → Data API** for the URL and **API Keys** for the key).
@@ -63,8 +58,8 @@ Other free options:
 - **GitHub Pages:** push the folder to a repo, then turn it on under *Settings → Pages* (deploy from branch, root folder).
 
 ### 6. Set up your shop and print the QR cards
-1. Open `https://YOUR-SITE/admin/` and log in.
-2. Go to **Settings**. Set your shop name, hours and logo, and set the **QR base URL** to your live address (for example `https://chai-stall-123.netlify.app`). Click **Save changes**.
+1. Open your site and tap **Owner login** at the bottom of the menu (or go to `/admin/`). The first time, you'll see **Create the owner account**. Enter your email and a password, and you'll land in the dashboard.
+2. The **Get your shop ready** checklist on Overview has a button for each step. Start with **Settings**. Set your shop name, hours and logo, and set the **QR base URL** to your live address (for example `https://chai-stall-123.netlify.app`). Click **Save changes**.
 3. Go to **Tables & QR**, enter how many tables you have, and tap **Generate**.
 4. Tap **Print cards** to print directly on A4 (4 or 6 per page, with cut marks), or download **All as A4 PDF** or **ZIP** to print at a shop. Use the **Test** link to check that a card opens the right table.
 5. Cut the cards out, laminate them, and stick one on each table. Scan one with your own phone to check it works.
@@ -91,8 +86,18 @@ It opens full-screen on the **Stock** tab, ready for the counter.
 **"Project paused" / the menu shows "Couldn't load the menu"**
 Free Supabase projects pause after about 7 days with no activity. Open https://supabase.com/dashboard, click your project, and click **Restore project**. It takes a minute and no data is lost. Normal daily use (customers scanning) keeps it awake.
 
-**"Permission denied" when saving in the dashboard, or "This account isn't set up as the shop owner"**
-Your login isn't in the `admins` table. Repeat **step 3.4** with the correct User UID (Authentication → Users → click the user). Check for missing characters or extra spaces.
+**The menu page is blank or says "Menu coming soon" with no items**
+`schema.sql` didn't fully run in this Supabase project. Run the whole file again (step 2). It's safe to repeat. Make sure you copied every line (open the file on GitHub and click **Raw**, then copy all).
+
+**Login page says "The database isn't set up yet"**
+Same fix: run all of `supabase/schema.sql` in the SQL Editor, then reload the login page.
+
+**Confirmation email**
+New Supabase projects ask new accounts to confirm their email. Click the link in the email. Even if the page it opens doesn't load, your email is now confirmed, so go back to `/admin/` and log in. To make the link open your site, go to **Authentication → URL Configuration** and set **Site URL** to your live address. To skip confirmation entirely, turn off **Confirm email** (step 3).
+
+**"This account isn't the shop owner"**
+Someone else's account became the owner first. In Supabase, go to **Authentication → Users**, click *your* user and copy its **User UID**. Then run this in the SQL Editor:
+`insert into public.admins (user_id) values ('YOUR-UID');`
 
 **Photos won't upload**
 - Make sure `schema.sql` ran completely. In Supabase, check **Storage**: a bucket called `menu-images` should exist and be marked *Public*. If it doesn't, run `schema.sql` again.

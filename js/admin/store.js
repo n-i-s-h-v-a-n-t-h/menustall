@@ -203,7 +203,8 @@ export async function updateSettings(patch, { action = 'save settings' } = {}) {
   const before = { ...store.settings };
   store.settings = { ...store.settings, ...patch };
   emit({ type: 'settings' });
-  const res = await run(() => sb.from('shop_settings').update(patch).eq('id', 1).select('*').single(), { action });
+  // Upsert: works even if the shop row was never created.
+  const res = await run(() => sb.from('shop_settings').upsert({ id: 1, ...patch }, { onConflict: 'id' }).select('*').single(), { action });
   if (res.error) {
     store.settings = before;
   } else if (res.data) {

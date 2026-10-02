@@ -1,10 +1,11 @@
 // ChaiMenu dashboard service worker.
 // - Pages: network first (always the newest version), cached copy offline.
-// - Our CSS/JS/icons: stale-while-revalidate (instant load, updates in background).
+// - Our CSS/JS/icons: network first too, so a new deploy is used immediately;
+//   the cached copy is only used offline.
 // - CDN libraries & fonts: cache first (versioned URLs never change).
 // - Supabase API / Realtime / Storage: never cached — stock must be live.
 
-const VERSION = 'chaimenu-v1';
+const VERSION = 'chaimenu-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
@@ -72,7 +73,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (url.origin === self.location.origin) {
-    event.respondWith(staleWhileRevalidate(request, event));
+    event.respondWith(networkFirst(request));
   }
 });
 
@@ -83,7 +84,9 @@ async function networkFirst(request) {
     return response;
   } catch {
     const cached = await caches.match(request, { ignoreSearch: true });
-    return cached || caches.match('./index.html');
+    if (cached) return cached;
+    if (request.mode === 'navigate') return caches.match('./index.html');
+    return Response.error();
   }
 }
 
@@ -93,20 +96,4 @@ async function cacheFirst(request) {
   const response = await fetch(request);
   if (response.ok || response.type === 'opaque') (await caches.open(RUNTIME_CACHE)).put(request, response.clone());
   return response;
-}
-
-async function staleWhileRevalidate(request, event) {
-  const cache = await caches.open(SHELL_CACHE);
-  const cached = await cache.match(request);
-  const network = fetch(request)
-    .then((response) => {
-      if (response.ok) cache.put(request, response.clone());
-      return response;
-    })
-    .catch(() => cached);
-  if (cached) {
-    event.waitUntil(network.catch(() => {}));
-    return cached;
-  }
-  return network;
 }

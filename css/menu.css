@@ -301,6 +301,7 @@ main:focus { outline: none; }
 .footer-cta { font-size: var(--fs-22); color: var(--brand); }
 .footer-hours { color: var(--text-2); font-size: var(--fs-14); }
 .footer-powered { margin-top: var(--sp-4); color: var(--muted); font-size: var(--fs-12); }
+.footer-owner { display: inline-block; padding: 12px 4px; color: var(--muted); }
 
 /* ---------------- My Picks pill ---------------- */
 

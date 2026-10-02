@@ -409,6 +409,51 @@ $$;
 revoke execute on function public.restore_stock(uuid, boolean, int, timestamptz, timestamptz) from public, anon;
 grant execute on function public.restore_stock(uuid, boolean, int, timestamptz, timestamptz) to authenticated;
 
+-- First-run setup: lets the dashboard guide the owner without any SQL.
+-- Only says whether an owner exists and whether the shop row exists.
+create or replace function public.setup_status()
+returns json
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select json_build_object(
+    'has_owner', exists (select 1 from public.admins),
+    'has_shop', exists (select 1 from public.shop_settings where id = 1),
+    'items', (select count(*) from public.menu_items)
+  );
+$$;
+
+grant execute on function public.setup_status() to anon, authenticated;
+
+-- The first signed-in user becomes the owner. Once an owner exists this
+-- only reports whether the caller is already one; it never adds anyone.
+create or replace function public.claim_ownership()
+returns boolean
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    return false;
+  end if;
+  lock table public.admins in exclusive mode; -- two people can't both claim
+  if not exists (select 1 from public.admins) then
+    insert into public.admins (user_id) values (auth.uid());
+    -- Make sure the shop row exists so Settings can be saved right away.
+    insert into public.shop_settings (id) values (1) on conflict (id) do nothing;
+    return true;
+  end if;
+  return exists (select 1 from public.admins where user_id = auth.uid());
+end;
+$$;
+
+revoke execute on function public.claim_ownership() from public, anon;
+grant execute on function public.claim_ownership() to authenticated;
+
 -- ---------------------------------------------------------------------
 -- 7. Realtime
 -- ---------------------------------------------------------------------
@@ -432,34 +477,7 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------
--- 8. Storage: public bucket for menu photos and the shop logo
--- ---------------------------------------------------------------------
-
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('menu-images', 'menu-images', true, 2097152,
-        array['image/jpeg', 'image/png', 'image/webp'])
-on conflict (id) do update
-  set public = excluded.public,
-      file_size_limit = excluded.file_size_limit,
-      allowed_mime_types = excluded.allowed_mime_types;
-
-drop policy if exists "menu-images public read"  on storage.objects;
-drop policy if exists "menu-images admin insert" on storage.objects;
-drop policy if exists "menu-images admin update" on storage.objects;
-drop policy if exists "menu-images admin delete" on storage.objects;
-
-create policy "menu-images public read" on storage.objects for select
-  using (bucket_id = 'menu-images');
-create policy "menu-images admin insert" on storage.objects for insert to authenticated
-  with check (bucket_id = 'menu-images' and public.is_admin());
-create policy "menu-images admin update" on storage.objects for update to authenticated
-  using (bucket_id = 'menu-images' and public.is_admin())
-  with check (bucket_id = 'menu-images' and public.is_admin());
-create policy "menu-images admin delete" on storage.objects for delete to authenticated
-  using (bucket_id = 'menu-images' and public.is_admin());
-
--- ---------------------------------------------------------------------
--- 9. Seed data (only when empty)
+-- 8. Seed data (only when empty)
 -- ---------------------------------------------------------------------
 
 insert into public.shop_settings (id, shop_name, tagline, announcement)
@@ -516,8 +534,51 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------
--- 10. Make yourself the owner (run AFTER creating your user in
---     Authentication → Users). Replace the id with your user's UID:
+-- 9. Storage: public bucket for menu photos and the shop logo
+--    Wrapped so that, if your project restricts storage changes from the
+--    SQL editor, the rest of the setup still succeeds (you'll see a NOTICE
+--    and can create the bucket by hand: README → "Images not uploading").
+-- ---------------------------------------------------------------------
+
+do $$
+begin
+  insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  values ('menu-images', 'menu-images', true, 2097152,
+          array['image/jpeg', 'image/png', 'image/webp'])
+  on conflict (id) do update
+    set public = excluded.public,
+        file_size_limit = excluded.file_size_limit,
+        allowed_mime_types = excluded.allowed_mime_types;
+exception when others then
+  raise notice 'ChaiMenu: could not create the menu-images bucket (%). Create it in Storage → New bucket (public).', sqlerrm;
+end;
+$$;
+
+do $$
+begin
+  execute 'drop policy if exists "menu-images public read"  on storage.objects';
+  execute 'drop policy if exists "menu-images admin insert" on storage.objects';
+  execute 'drop policy if exists "menu-images admin update" on storage.objects';
+  execute 'drop policy if exists "menu-images admin delete" on storage.objects';
+  execute $p$create policy "menu-images public read" on storage.objects for select
+    using (bucket_id = 'menu-images')$p$;
+  execute $p$create policy "menu-images admin insert" on storage.objects for insert to authenticated
+    with check (bucket_id = 'menu-images' and public.is_admin())$p$;
+  execute $p$create policy "menu-images admin update" on storage.objects for update to authenticated
+    using (bucket_id = 'menu-images' and public.is_admin())
+    with check (bucket_id = 'menu-images' and public.is_admin())$p$;
+  execute $p$create policy "menu-images admin delete" on storage.objects for delete to authenticated
+    using (bucket_id = 'menu-images' and public.is_admin())$p$;
+exception when others then
+  raise notice 'ChaiMenu: could not create storage policies (%). See README → "Images not uploading".', sqlerrm;
+end;
+$$;
+
+-- ---------------------------------------------------------------------
+-- 10. Owner account
+--     You don't need to run anything here: the FIRST account that logs in
+--     to /admin becomes the owner automatically (claim_ownership below).
+--     To add another owner later, run (with their User UID):
 --
 --   insert into public.admins (user_id) values ('00000000-0000-0000-0000-000000000000');
 -- ---------------------------------------------------------------------

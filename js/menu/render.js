@@ -370,9 +370,10 @@ export function applyFilters(state, handlers) {
       emoji: q ? '🔍' : '🫖',
       title: q ? `No matches for “${state.query.trim()}”` : filtering ? 'Nothing matches these filters' : 'Menu coming soon',
       message: q ? `Try “${suggestion}”, or check the spelling.` : filtering ? 'Try removing a filter to see more.'
-        : state.settings ? 'The owner is still setting things up.'
-        : 'The owner is still setting things up. (Owner: the database has no shop details yet — run supabase/schema.sql in Supabase, see README step 2.)',
-      action: filtering ? h('button', { type: 'button', class: 'btn btn-secondary', onClick: handlers.onClearFilters }, icon('x', { size: 16 }), 'Clear search & filters') : null,
+        : 'The owner is still setting things up. Please check back soon.',
+      action: filtering
+        ? h('button', { type: 'button', class: 'btn btn-secondary', onClick: handlers.onClearFilters }, icon('x', { size: 16 }), 'Clear search & filters')
+        : !state.categories.length ? h('a', { class: 'btn btn-primary', href: 'admin/' }, icon('lock', { size: 16 }), 'Owner? Log in to set up the menu') : null,
     }));
   } else {
     empty.hidden = true;
