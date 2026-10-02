@@ -1,0 +1,207 @@
+/* =====================================================================
+   ChaiMenu design tokens — the single source of truth for look & feel.
+   Light theme by default; dark follows the OS unless the user picked one.
+   ===================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Brand */
+  --brand: #6B3E26;          /* chai brown */
+  --brand-strong: #52301D;
+  --brand-soft: #F3E4D7;
+  --on-brand: #FFF8EE;
+  --accent: #E8A33D;         /* masala amber */
+  --accent-soft: #FCEBCF;
+  --on-accent: #2A1B14;
+  --success: #4F8A5B;        /* cardamom green */
+  --success-text: #3D7049;
+  --success-soft: #E3F0E5;
+  --danger: #C8483B;
+  --danger-text: #B13B2F;
+  --danger-soft: #F9E1DE;
+  --warning: #B7791F;
+  --warning-text: #8A5A12;
+  --warning-soft: #FDF0D8;
+
+  /* Surfaces & text */
+  --bg: #FFF8EE;             /* milk cream */
+  --bg-elevated: #FFFCF7;
+  --surface: #FFFFFF;
+  --surface-2: #FBF3E8;
+  --surface-3: #F4E9DB;
+  --text: #2A1B14;
+  --text-2: #5A463B;
+  --muted: #7A685D;          /* tuned from #8C7B70 to pass AA on cream */
+  --disabled: #BDB3AB;
+  --hairline: rgba(74, 44, 26, 0.10);
+  --hairline-strong: rgba(74, 44, 26, 0.18);
+  --overlay: rgba(30, 18, 12, 0.48);
+  --focus: #E8A33D;
+  --skeleton: #F1E6D8;
+  --skeleton-shine: #FAF3EA;
+
+  /* Gradients */
+  --grad-hero: radial-gradient(120% 90% at 10% 0%, #FCE3BF 0%, rgba(252, 227, 191, 0) 60%),
+               radial-gradient(90% 80% at 100% 10%, #F2D2BC 0%, rgba(242, 210, 188, 0) 55%),
+               linear-gradient(180deg, #FFF3E2 0%, var(--bg) 100%);
+  --grad-placeholder-1: linear-gradient(135deg, #F6D9B4 0%, #E8A33D 100%);
+  --grad-placeholder-2: linear-gradient(135deg, #F3D3C2 0%, #B86B47 100%);
+  --grad-placeholder-3: linear-gradient(135deg, #E8E2C4 0%, #8FA866 100%);
+  --grad-placeholder-4: linear-gradient(135deg, #F8E2D0 0%, #C8483B 100%);
+  --grad-placeholder-5: linear-gradient(135deg, #EADBC9 0%, #6B3E26 100%);
+
+  /* Typography */
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-ui: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fs-12: 0.75rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-22: 1.375rem;
+  --fs-28: 1.75rem;
+  --fs-36: 2.25rem;
+  --lh-tight: 1.2;
+  --lh-normal: 1.5;
+
+  /* Spacing (4/8 scale) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --gutter: 16px;
+
+  /* Shape */
+  --r-input: 12px;
+  --r-card: 16px;
+  --r-lg: 24px;
+  --r-pill: 999px;
+
+  /* Depth — soft & layered, never harsh */
+  --shadow-1: 0 1px 2px rgba(74, 44, 26, 0.06), 0 1px 1px rgba(74, 44, 26, 0.04);
+  --shadow-2: 0 2px 4px rgba(74, 44, 26, 0.05), 0 6px 16px rgba(74, 44, 26, 0.08);
+  --shadow-3: 0 8px 20px rgba(74, 44, 26, 0.10), 0 20px 48px rgba(74, 44, 26, 0.14);
+  --shadow-glow: 0 0 0 4px rgba(232, 163, 61, 0.18), 0 6px 18px rgba(232, 163, 61, 0.35);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-1: 150ms;
+  --dur-2: 200ms;
+  --dur-3: 250ms;
+
+  /* Layout */
+  --tap: 44px;
+  --content-max: 760px;
+  --z-sticky: 20;
+  --z-float: 40;
+  --z-toast: 1000;
+}
+
+/* Dark theme: espresso. Applied by OS preference unless the user chose light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --brand: #E3B48E;
+    --brand-strong: #F0C9A8;
+    --brand-soft: #3A281E;
+    --on-brand: #1B120D;
+    --accent: #F0B25A;
+    --accent-soft: #3E2D17;
+    --on-accent: #1B120D;
+    --success: #7FBF8B;
+    --success-text: #8FCB9A;
+    --success-soft: #1F3324;
+    --danger: #E9796D;
+    --danger-text: #F08C81;
+    --danger-soft: #3D1F1B;
+    --warning: #F0B25A;
+    --warning-text: #F3C17A;
+    --warning-soft: #3B2C14;
+    --bg: #17100C;
+    --bg-elevated: #1D1410;
+    --surface: #231914;
+    --surface-2: #2B1F19;
+    --surface-3: #35271F;
+    --text: #F7EBDD;
+    --text-2: #DCCBBB;
+    --muted: #B3A193;
+    --disabled: #6E5F55;
+    --hairline: rgba(255, 236, 214, 0.09);
+    --hairline-strong: rgba(255, 236, 214, 0.16);
+    --overlay: rgba(0, 0, 0, 0.6);
+    --focus: #F0B25A;
+    --skeleton: #2B1F19;
+    --skeleton-shine: #36281F;
+    --grad-hero: radial-gradient(120% 90% at 10% 0%, #3A2516 0%, rgba(58, 37, 22, 0) 60%),
+                 radial-gradient(90% 80% at 100% 10%, #33201A 0%, rgba(51, 32, 26, 0) 55%),
+                 linear-gradient(180deg, #1F1510 0%, var(--bg) 100%);
+    --grad-placeholder-1: linear-gradient(135deg, #4A321C 0%, #9A6A26 100%);
+    --grad-placeholder-2: linear-gradient(135deg, #4A2C22 0%, #8A4B30 100%);
+    --grad-placeholder-3: linear-gradient(135deg, #2F3522 0%, #5E7444 100%);
+    --grad-placeholder-4: linear-gradient(135deg, #48251F 0%, #93362C 100%);
+    --grad-placeholder-5: linear-gradient(135deg, #35251B 0%, #6B4A35 100%);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 20px rgba(0, 0, 0, 0.3);
+    --shadow-3: 0 10px 28px rgba(0, 0, 0, 0.5), 0 24px 56px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --brand: #E3B48E;
+  --brand-strong: #F0C9A8;
+  --brand-soft: #3A281E;
+  --on-brand: #1B120D;
+  --accent: #F0B25A;
+  --accent-soft: #3E2D17;
+  --on-accent: #1B120D;
+  --success: #7FBF8B;
+  --success-text: #8FCB9A;
+  --success-soft: #1F3324;
+  --danger: #E9796D;
+  --danger-text: #F08C81;
+  --danger-soft: #3D1F1B;
+  --warning: #F0B25A;
+  --warning-text: #F3C17A;
+  --warning-soft: #3B2C14;
+  --bg: #17100C;
+  --bg-elevated: #1D1410;
+  --surface: #231914;
+  --surface-2: #2B1F19;
+  --surface-3: #35271F;
+  --text: #F7EBDD;
+  --text-2: #DCCBBB;
+  --muted: #B3A193;
+  --disabled: #6E5F55;
+  --hairline: rgba(255, 236, 214, 0.09);
+  --hairline-strong: rgba(255, 236, 214, 0.16);
+  --overlay: rgba(0, 0, 0, 0.6);
+  --focus: #F0B25A;
+  --skeleton: #2B1F19;
+  --skeleton-shine: #36281F;
+  --grad-hero: radial-gradient(120% 90% at 10% 0%, #3A2516 0%, rgba(58, 37, 22, 0) 60%),
+               radial-gradient(90% 80% at 100% 10%, #33201A 0%, rgba(51, 32, 26, 0) 55%),
+               linear-gradient(180deg, #1F1510 0%, var(--bg) 100%);
+  --grad-placeholder-1: linear-gradient(135deg, #4A321C 0%, #9A6A26 100%);
+  --grad-placeholder-2: linear-gradient(135deg, #4A2C22 0%, #8A4B30 100%);
+  --grad-placeholder-3: linear-gradient(135deg, #2F3522 0%, #5E7444 100%);
+  --grad-placeholder-4: linear-gradient(135deg, #48251F 0%, #93362C 100%);
+  --grad-placeholder-5: linear-gradient(135deg, #35251B 0%, #6B4A35 100%);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 20px rgba(0, 0, 0, 0.3);
+  --shadow-3: 0 10px 28px rgba(0, 0, 0, 0.5), 0 24px 56px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0ms;
+    --dur-2: 0ms;
+    --dur-3: 0ms;
+  }
+}

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FFF8EE">
+  <meta name="robots" content="noindex">
+  <title>Owner login · ChaiMenu</title>
+  <script>
+    try { var t = localStorage.getItem('chaimenu:theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="login-page">
+  <div class="login-theme" id="theme-slot"></div>
+  <main class="login-wrap">
+    <div class="login-card card">
+      <div class="login-brand">
+        <div class="login-logo" aria-hidden="true"><img src="icons/icon.svg" alt="" width="64" height="64"></div>
+        <h1 class="display">ChaiMenu</h1>
+        <p class="muted">Owner dashboard</p>
+      </div>
+
+      <div class="login-banner" id="login-banner" role="status" aria-live="polite" hidden></div>
+
+      <!-- Log in -->
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label class="field-label" for="email">Email</label>
+          <input class="input" id="email" type="email" autocomplete="username" inputmode="email" required aria-describedby="email-error">
+          <p class="field-error" id="email-error"></p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="password">Password</label>
+          <div class="input-wrap">
+            <input class="input pw-input" id="password" type="password" autocomplete="current-password" required aria-describedby="password-error">
+            <button type="button" class="btn btn-ghost btn-icon input-addon" data-toggle-password="password" aria-label="Show password" aria-pressed="false">
+              <svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <p class="field-error" id="password-error"></p>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block login-submit"><span class="btn-label">Log in</span></button>
+        <button type="button" class="btn btn-ghost btn-block" id="forgot-link">Forgot password?</button>
+      </form>
+
+      <!-- Forgot password -->
+      <form id="forgot-form" novalidate hidden>
+        <h2 class="login-sub">Reset your password</h2>
+        <p class="muted small">We’ll email you a link to choose a new password.</p>
+        <div class="field">
+          <label class="field-label" for="forgot-email">Email</label>
+          <input class="input" id="forgot-email" type="email" autocomplete="username" inputmode="email" required aria-describedby="forgot-email-error">
+          <p class="field-error" id="forgot-email-error"></p>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block login-submit"><span class="btn-label">Send reset link</span></button>
+        <button type="button" class="btn btn-ghost btn-block" id="back-to-login">Back to login</button>
+      </form>
+
+      <!-- Set a new password -->
+      <form id="recover-form" novalidate hidden>
+        <h2 class="login-sub">Choose a new password</h2>
+        <div class="field">
+          <label class="field-label" for="new-password">New password</label>
+          <div class="input-wrap">
+            <input class="input pw-input" id="new-password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="new-password-hint new-password-error">
+            <button type="button" class="btn btn-ghost btn-icon input-addon" data-toggle-password="new-password" aria-label="Show password" aria-pressed="false">
+              <svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <p class="field-hint" id="new-password-hint">At least 8 characters.</p>
+          <p class="field-error" id="new-password-error"></p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="new-password-2">Confirm new password</label>
+          <input class="input" id="new-password-2" type="password" autocomplete="new-password" required aria-describedby="new-password-2-error">
+          <p class="field-error" id="new-password-2-error"></p>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block login-submit"><span class="btn-label">Save new password</span></button>
+      </form>
+    </div>
+    <p class="login-foot muted small"><a href="../index.html">← Back to the menu</a></p>
+  </main>
+
+  <script type="module">
+    import { initLoginPage } from '../js/admin/auth.js';
+    initLoginPage();
+  </script>
+</body>
+</html>

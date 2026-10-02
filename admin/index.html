@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FFF8EE">
+  <meta name="robots" content="noindex">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ChaiMenu">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Dashboard · ChaiMenu</title>
+  <script>
+    try { var t = localStorage.getItem('chaimenu:theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="admin is-booting">
+  <a class="skip-link" href="#view">Skip to content</a>
+
+  <div class="shell">
+    <aside class="sidebar" aria-label="Dashboard">
+      <div class="brand">
+        <span class="brand-logo" aria-hidden="true"><img src="icons/icon.svg" alt="" width="64" height="64"></span>
+        <span class="brand-name display">ChaiMenu</span>
+      </div>
+      <nav class="side-nav" aria-label="Main">
+        <a href="#overview" data-tab="overview"><span data-icon="dashboard"></span><span>Overview</span></a>
+        <a href="#stock" data-tab="stock"><span data-icon="package"></span><span>Stock</span></a>
+        <a href="#menu" data-tab="menu"><span data-icon="utensils"></span><span>Menu</span></a>
+        <a href="#tables" data-tab="tables"><span data-icon="qr"></span><span>Tables &amp; QR</span></a>
+        <a href="#settings" data-tab="settings"><span data-icon="settings"></span><span>Settings</span></a>
+      </nav>
+      <div class="side-foot">
+        <p class="side-user" id="side-user"></p>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1 class="shop-title display" id="shop-title">Dashboard</h1>
+          <span class="live-dot" id="live-dot" role="status" aria-live="polite" title="Live sync status"></span>
+        </div>
+        <div class="topbar-actions">
+          <span id="open-switch-slot"></span>
+          <a class="btn btn-secondary btn-sm view-menu" id="view-menu" href="../index.html" target="_blank" rel="noopener">
+            <span data-icon="external"></span><span class="hide-sm">View menu</span><span class="sr-only show-sm-only">View menu (opens new tab)</span>
+          </a>
+          <span id="theme-slot"></span>
+          <button type="button" class="btn btn-ghost btn-icon" id="logout" aria-label="Log out" title="Log out"><span data-icon="logout"></span></button>
+        </div>
+      </header>
+
+      <main id="view" class="view" tabindex="-1">
+        <div class="boot" id="boot">
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="muted" role="status">Opening your dashboard…</p>
+        </div>
+        <section class="tab-panel" id="tab-overview" data-panel="overview" aria-labelledby="h-overview" hidden></section>
+        <section class="tab-panel" id="tab-stock" data-panel="stock" aria-labelledby="h-stock" hidden></section>
+        <section class="tab-panel" id="tab-menu" data-panel="menu" aria-labelledby="h-menu" hidden></section>
+        <section class="tab-panel" id="tab-tables" data-panel="tables" aria-labelledby="h-tables" hidden></section>
+        <section class="tab-panel" id="tab-settings" data-panel="settings" aria-labelledby="h-settings" hidden></section>
+      </main>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Main">
+      <a href="#overview" data-tab="overview"><span data-icon="dashboard"></span><span>Overview</span></a>
+      <a href="#stock" data-tab="stock"><span data-icon="package"></span><span>Stock</span></a>
+      <a href="#menu" data-tab="menu"><span data-icon="utensils"></span><span>Menu</span></a>
+      <a href="#tables" data-tab="tables"><span data-icon="qr"></span><span>QR</span></a>
+      <a href="#settings" data-tab="settings"><span data-icon="settings"></span><span>Settings</span></a>
+    </nav>
+  </div>
+
+  <script type="module" src="../js/admin/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#FFF8EE">
+  <meta name="robots" content="noindex">
+  <title>Print QR table cards · ChaiMenu</title>
+  <script>
+    try { var t = localStorage.getItem('chaimenu:theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <style>
+    /* Print layout: A4, cards at real size, light cut marks. */
+    @page { size: A4 portrait; margin: 0; }
+
+    .print-page { background: var(--surface-3); }
+    .print-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-3) var(--gutter);
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 1px 0 var(--hairline);
+    }
+    .print-bar h1 { font-family: var(--font-display); font-size: var(--fs-22); color: var(--brand); margin-right: auto; }
+    .print-status { width: 100%; margin: 0; color: var(--muted); font-size: var(--fs-14); }
+    .print-help { max-width: 210mm; margin: var(--sp-4) auto 0; padding: 0 var(--gutter); color: var(--text-2); font-size: var(--fs-14); }
+
+    #sheets { padding: var(--sp-5) 0 var(--sp-10); }
+    .sheet {
+      --cols: 2; --cw: 90mm; --ch: 127.5mm; --gx: 12mm; --gy: 12mm;
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(var(--cols), var(--cw));
+      grid-auto-rows: var(--ch);
+      gap: var(--gy) var(--gx);
+      place-content: center;
+      width: 210mm;
+      height: 297mm;
+      margin: 0 auto var(--sp-6);
+      background: #fff;
+      box-shadow: var(--shadow-3);
+      overflow: hidden;
+      break-after: page;
+      page-break-after: always;
+    }
+    .sheet.per-6 { --cols: 3; --cw: 58mm; --ch: 82.17mm; --gx: 9mm; --gy: 14mm; }
+    .slot { position: relative; }
+    .slot img { display: block; width: 100%; height: 100%; }
+    .mark { position: absolute; width: 4mm; height: 4mm; border: 0 solid #9a9a9a; }
+    .mark.tl { left: -4.5mm; top: -4.5mm; border-right-width: 0.25mm; border-bottom-width: 0.25mm; }
+    .mark.tr { right: -4.5mm; top: -4.5mm; border-left-width: 0.25mm; border-bottom-width: 0.25mm; }
+    .mark.bl { left: -4.5mm; bottom: -4.5mm; border-right-width: 0.25mm; border-top-width: 0.25mm; }
+    .mark.br { right: -4.5mm; bottom: -4.5mm; border-left-width: 0.25mm; border-top-width: 0.25mm; }
+    /* Nudge outwards so marks leave a hairline gap and never print on the card. */
+    .mark.tl { transform: translate(-0.5mm, -0.5mm); }
+    .mark.tr { transform: translate(0.5mm, -0.5mm); }
+    .mark.bl { transform: translate(-0.5mm, 0.5mm); }
+    .mark.br { transform: translate(0.5mm, 0.5mm); }
+
+    @media screen {
+      .sheet { zoom: var(--preview-zoom, 1); }
+    }
+    @media print {
+      html, body { background: #fff !important; }
+      .no-print { display: none !important; }
+      #sheets { padding: 0; }
+      .sheet { margin: 0; box-shadow: none; zoom: 1; }
+      .sheet:last-child { break-after: auto; page-break-after: auto; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body class="print-page">
+  <header class="print-bar no-print">
+    <a class="btn btn-ghost btn-sm" href="index.html#tables">← Dashboard</a>
+    <h1>Print QR cards</h1>
+    <div class="segmented" role="group" aria-label="Cards per A4 page">
+      <button type="button" data-per="4" aria-pressed="true">4 per page</button>
+      <button type="button" data-per="6" aria-pressed="false">6 per page</button>
+    </div>
+    <button type="button" class="btn btn-primary" id="print-btn" disabled><span class="btn-label">Print</span></button>
+    <p class="print-status" id="status" role="status" aria-live="polite">Preparing cards…</p>
+  </header>
+  <p class="print-help no-print">Tip: in the print dialog choose <strong>A4</strong>, scale <strong>100% / Actual size</strong> and turn <strong>Headers and footers</strong> off. Cut along the grey corner marks and laminate.</p>
+  <main id="sheets" aria-label="Pages to print"></main>
+
+  <script type="module">
+    import { requireAdmin } from '../js/admin/auth.js';
+    import { store, loadAll, isLocalUrl, menuBaseUrl } from '../js/admin/store.js';
+    import { drawTableCard, cardOptions } from '../js/admin/tables-qr.js';
+    import { h, $, $$, clear, toast } from '../js/lib/ui.js';
+
+    const status = $('#status');
+    const printBtn = $('#print-btn');
+    const sheetsEl = $('#sheets');
+    let per = 4;
+    let images = [];
+
+    function fitPreview() {
+      const sheetPx = 210 * 96 / 25.4; // 210mm at 96dpi
+      const zoom = Math.min(1, (window.innerWidth - 32) / sheetPx);
+      document.documentElement.style.setProperty('--preview-zoom', String(zoom));
+    }
+
+    function layout() {
+      clear(sheetsEl);
+      for (let i = 0; i < images.length; i += per) {
+        const sheet = h('section', { class: `sheet per-${per}`, 'aria-label': `Page ${i / per + 1}` });
+        for (const { url, n } of images.slice(i, i + per)) {
+          sheet.appendChild(h('div', { class: 'slot' },
+            h('img', { src: url, alt: `QR card for table ${n}` }),
+            h('span', { class: 'mark tl', 'aria-hidden': 'true' }),
+            h('span', { class: 'mark tr', 'aria-hidden': 'true' }),
+            h('span', { class: 'mark bl', 'aria-hidden': 'true' }),
+            h('span', { class: 'mark br', 'aria-hidden': 'true' }),
+          ));
+        }
+        sheetsEl.appendChild(sheet);
+      }
+      const pages = Math.ceil(images.length / per);
+      status.textContent = `${images.length} card${images.length === 1 ? '' : 's'} on ${pages} A4 page${pages === 1 ? '' : 's'}.`;
+    }
+
+    for (const btn of $$('[data-per]')) {
+      btn.addEventListener('click', () => {
+        per = Number(btn.dataset.per);
+        for (const b of $$('[data-per]')) b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        layout();
+      });
+    }
+    printBtn.addEventListener('click', () => window.print());
+    window.addEventListener('resize', fitPreview);
+
+    async function main() {
+      fitPreview();
+      await requireAdmin();
+      const { error } = await loadAll();
+      if (error) { status.textContent = 'Couldn’t load your tables. Check your connection and reload.'; return; }
+      const tables = store.tables.filter((t) => t.is_active).sort((a, b) => a.table_number - b.table_number);
+      if (!tables.length) { status.textContent = 'No active tables yet. Go to Tables & QR and enter how many tables you have.'; return; }
+      if (isLocalUrl(menuBaseUrl())) toast('Warning: these QR codes point to a local address and won’t open on customers’ phones. Set the QR base URL in Settings.', { type: 'warning', duration: 10000 });
+
+      let done = 0;
+      for (const t of tables) {
+        const canvas = await drawTableCard(cardOptions(t.table_number));
+        const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+        images.push({ url: URL.createObjectURL(blob), n: t.table_number });
+        status.textContent = `Drawing cards… ${++done}/${tables.length}`;
+      }
+      layout();
+      await Promise.all($$('.slot img').map((img) => img.decode().catch(() => {})));
+      printBtn.disabled = false;
+      printBtn.focus();
+    }
+    main().catch((err) => { status.textContent = `Something went wrong: ${err.message}. Check your internet connection and reload.`; });
+  </script>
+</body>
+</html>
